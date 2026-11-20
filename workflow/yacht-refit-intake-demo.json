@@ -1,0 +1,318 @@
+{
+  "name": "Yacht refit intake (demo)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Yacht refit intake (demo)\n\nOrganizes a made-up refit inquiry into a clear summary and checklist.\n\n**Fictional data only. No cost estimates, no vendors, no timelines, nothing sent. No credentials needed.**\n\nClick **Execute workflow**, then open the last node, **Review queue**.",
+        "width": 540,
+        "height": 230,
+        "color": 4
+      },
+      "id": "e0000000-0000-4000-8000-000000000001",
+      "name": "Note: What this is",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -260
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e0000000-0000-4000-8000-000000000010",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// FICTIONAL DATA ONLY. These are the same four records as sample-data/fictional-refit-requests.json.\n// To try your own made-up request, edit this list. Do not paste real vessel or client details here.\nconst requests = [\n  {\n    \"request_id\": \"YR-3001\",\n    \"received_at\": \"2026-04-06T09:12:00-04:00\",\n    \"vessel_name\": \"M/Y Sample Tide\",\n    \"vessel_type\": \"Motor yacht\",\n    \"length_m\": \"32\",\n    \"contact_name\": \"Jordan Example\",\n    \"email\": \"Jordan.Example@example.com\",\n    \"phone\": \"555-0101\",\n    \"location\": \"Example Marina, Placeholder Bay\",\n    \"requested_work\": \"Refresh the main salon and two guest cabins: new upholstery, new carpet, and some joinery repair in the galley.\",\n    \"target_window\": \"Winter, after the autumn season\",\n    \"deadline\": \"\",\n    \"notes\": \"\"\n  },\n  {\n    \"request_id\": \"YR-3002\",\n    \"received_at\": \"2026-04-06T10:30:00-04:00\",\n    \"vessel_name\": \"S/Y Demo Breeze\",\n    \"vessel_type\": \"Sailing yacht\",\n    \"length_m\": \"24\",\n    \"contact_name\": \"Riley Sample\",\n    \"email\": \"riley.sample@example.com\",\n    \"phone\": \"\",\n    \"location\": \"Fictional Harbor\",\n    \"requested_work\": \"Repaint the hull and refinish the teak deck. We also want the generator looked at while she is out of the water.\",\n    \"target_window\": \"Spring\",\n    \"deadline\": \"Back in the water before charter season starts\",\n    \"notes\": \"This is fairly urgent for us.\"\n  },\n  {\n    \"request_id\": \"YR-3003\",\n    \"received_at\": \"2026-04-06T13:45:00-04:00\",\n    \"vessel_name\": \"M/Y Placeholder Star\",\n    \"vessel_type\": \"Motor yacht\",\n    \"length_m\": \"\",\n    \"contact_name\": \"Casey Placeholder\",\n    \"email\": \"casey.placeholder@example.com\",\n    \"phone\": \"\",\n    \"location\": \"\",\n    \"requested_work\": \"We would like to talk about a refit.\",\n    \"target_window\": \"\",\n    \"deadline\": \"\",\n    \"notes\": \"\"\n  },\n  {\n    \"request_id\": \"YR-3004\",\n    \"received_at\": \"2026-04-07T08:05:00-04:00\",\n    \"vessel_name\": \"M/Y Imaginary Wake\",\n    \"vessel_type\": \"Motor yacht\",\n    \"length_m\": \"41\",\n    \"contact_name\": \"Morgan Demo\",\n    \"email\": \"morgan.demo@example.com\",\n    \"phone\": \"555-0104\",\n    \"location\": \"Sample Yard, Example Coast\",\n    \"requested_work\": \"Replace the radar and chartplotter, add new wifi antennas, and update the audio system in the wheelhouse.\",\n    \"target_window\": \"Within the next year\",\n    \"deadline\": \"\",\n    \"notes\": \"No fixed date.\"\n  }\n];\n\nreturn requests.map((request) => ({ json: request }));\n"
+      },
+      "id": "e0000000-0000-4000-8000-000000000011",
+      "name": "1. Fictional refit requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Step 1: tidy the fields and check that the details needed to understand the request are there.\nconst clean = (v) => (v == null ? '' : String(v).trim().replace(/\\s+/g, ' '));\nconst emailPattern = /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/;\n\nreturn $input.all().map(({ json }) => {\n  const email = clean(json.email).toLowerCase();\n  const usableEmail = emailPattern.test(email) ? email : '';\n  const phone = clean(json.phone).replace(/[^\\d+]/g, '');\n  const length = parseFloat(clean(json.length_m).replace(/[^\\d.]/g, ''));\n\n  const request = {\n    request_id: clean(json.request_id),\n    received_at: clean(json.received_at),\n    vessel: {\n      name: clean(json.vessel_name),\n      type: clean(json.vessel_type) || 'not given',\n      length_m: length > 0 && length < 200 ? length : null,\n    },\n    contact: { name: clean(json.contact_name), email: usableEmail, phone },\n    location: clean(json.location),\n    requested_work: clean(json.requested_work),\n    target_window: clean(json.target_window),\n    client_deadline: clean(json.deadline),\n    notes: clean(json.notes),\n  };\n\n  const missing = [];\n  if (!request.contact.name) missing.push('contact name');\n  if (!usableEmail && !phone) missing.push('email or phone');\n  if (!request.vessel.name) missing.push('vessel name');\n  if (request.vessel.length_m === null) missing.push('vessel length');\n  if (!request.location) missing.push('where the vessel is');\n  if (!request.requested_work) missing.push('description of the work');\n  if (!request.target_window) missing.push('preferred time window');\n\n  return { json: { request, missing_fields: missing, is_complete: missing.length === 0 } };\n});\n"
+      },
+      "id": "e0000000-0000-4000-8000-000000000012",
+      "name": "2. Normalize + check missing details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Step 2: sort the request into broad project types and a time-sensitivity flag.\n// Plain keyword rules, NOT AI. The output shows exactly which words matched, so a reviewer\n// can see why. A request can match several types. Edit the lists to change the behavior.\nconst TYPE_RULES = [\n  { type: 'Interior and joinery', keywords: ['interior', 'upholstery', 'carpet', 'cabin', 'salon', 'galley', 'joinery', 'curtain', 'furniture'] },\n  { type: 'Exterior and finish', keywords: ['paint', 'hull', 'varnish', 'teak', 'deck', 'gelcoat', 'topside'] },\n  { type: 'Mechanical and systems', keywords: ['engine', 'generator', 'hvac', 'air conditioning', 'pump', 'plumbing', 'electrical', 'stabiliz'] },\n  { type: 'Electronics and navigation', keywords: ['radar', 'chartplotter', 'navigation', 'wifi', 'wi-fi', 'antenna', 'audio', 'camera'] },\n];\nconst URGENT_WORDS = ['urgent', 'asap', 'deadline', 'charter season', 'before the season', 'hard stop'];\n\nconst escape = (s) => s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\nconst matches = (text, keyword) => new RegExp('\\\\b' + escape(keyword), 'i').test(text);\n\nreturn $input.all().map(({ json }) => {\n  const r = json.request;\n  const text = [r.requested_work, r.notes].join(' ');\n\n  const project_types = TYPE_RULES\n    .map((rule) => ({ type: rule.type, matched_keywords: rule.keywords.filter((k) => matches(text, k)) }))\n    .filter((t) => t.matched_keywords.length);\n\n  const urgency_reasons = [];\n  if (r.client_deadline) urgency_reasons.push('client gave a finish-by condition: \"' + r.client_deadline + '\"');\n  const hits = URGENT_WORDS.filter((k) => matches(text + ' ' + r.client_deadline, k));\n  if (hits.length) urgency_reasons.push('words in the request: ' + hits.join(', '));\n\n  return {\n    json: {\n      ...json,\n      classification: {\n        project_types: project_types.length ? project_types : [{ type: 'Needs scoping', matched_keywords: [] }],\n        urgency: urgency_reasons.length ? 'Time-sensitive' : 'Planned',\n        urgency_reasons,\n        rule_note: 'Keyword rules only. Urgency here means the CLIENT said it matters. It is not a schedule or a commitment.',\n      },\n    },\n  };\n});\n"
+      },
+      "id": "e0000000-0000-4000-8000-000000000013",
+      "name": "3. Categorize (keyword rules, not AI)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Step 3: build a short project summary and a checklist of intake steps.\n// Everything here is about organizing information. It does not estimate cost, pick vendors,\n// approve work, or promise a timeline.\nconst STEP_BY_TYPE = {\n  'Interior and joinery': 'Ask the client for photos or drawings of the areas involved',\n  'Exterior and finish': 'Ask whether the client has records of the current finish',\n  'Mechanical and systems': 'Ask for the equipment list and any recent service records',\n  'Electronics and navigation': 'Ask which equipment is installed today',\n  'Needs scoping': 'Set up a short call to understand what the client has in mind',\n};\n\nreturn $input.all().map(({ json }) => {\n  const { request: r, missing_fields, classification } = json;\n  const types = classification.project_types.map((t) => t.type);\n  const vessel = [r.vessel.name || '(vessel name missing)', r.vessel.length_m ? r.vessel.length_m + ' m' : null, r.vessel.type !== 'not given' ? r.vessel.type.toLowerCase() : null].filter(Boolean);\n\n  const next_steps = [\n    { step: 'Read this summary against the original message and fix anything that is wrong', owner: 'Intake coordinator' },\n    ...types.map((t) => ({ step: STEP_BY_TYPE[t], owner: 'Intake coordinator' })),\n  ];\n  if (missing_fields.length) next_steps.push({ step: 'Get the missing details: ' + missing_fields.join(', '), owner: 'Intake coordinator' });\n  if (classification.urgency === 'Time-sensitive') next_steps.push({ step: 'Show the client-stated deadline to the project lead for their judgment', owner: 'Project lead' });\n  next_steps.push({ step: 'Review and edit the draft status update before anything is sent', owner: 'Intake coordinator' });\n  next_steps.push({ step: 'Decide the next move: scoping call, site visit, or not a fit', owner: 'Project lead' });\n\n  return {\n    json: {\n      ...json,\n      project_summary: {\n        headline: vessel.join(', ') + ' | ' + types.join(' + ') + ' | ' + classification.urgency,\n        vessel: r.vessel,\n        where: r.location || 'not given',\n        client_words: r.requested_work || 'not given',\n        project_types: types,\n        urgency: classification.urgency,\n        client_stated_window: r.target_window || 'not given',\n        open_questions: missing_fields,\n      },\n      next_steps: next_steps.map((s) => ({ ...s, done: false })),\n    },\n  };\n});\n"
+      },
+      "id": "e0000000-0000-4000-8000-000000000014",
+      "name": "4. Project summary + next-step checklist",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.is_complete }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e0000000-0000-4000-8000-000000000015",
+      "name": "Complete intake?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Step 4a: the intake is complete. Fill a status-update TEMPLATE for a person to review.\nconst SIGNOFF = ['Thank you,', '[Reviewer name]', 'Example Refit Coordination (fictional)'];\nconst reach = (c) => (c.email ? { channel: 'email', to: c.email } : { channel: 'phone call', to: c.phone });\n\nreturn $input.all().map(({ json }) => {\n  const { request: r, project_summary: s } = json;\n  const first = r.contact.name.split(' ')[0];\n  const body = [\n    'Hello ' + first + ',',\n    '',\n    'Thank you for sending the details for ' + r.vessel.name + '. Here is what we understood:',\n    '',\n    '- Where the vessel is: ' + s.where,\n    '- What you described: ' + s.client_words,\n    '- Your preferred window: ' + s.client_stated_window,\n    '',\n    'If anything above is wrong, please tell us and we will correct it. Someone on the team will read your request and follow up with the next step.',\n    '',\n    'This message is an acknowledgment only. It is not a quote, a schedule, or an approval of any work.',\n    '',\n    ...SIGNOFF,\n  ].join('\\n');\n  return { json: { ...json, draft_status_update: { ...reach(r.contact), subject: 'We received your request for ' + r.vessel.name, body, kind: 'acknowledgment (template)' } } };\n});\n"
+      },
+      "id": "e0000000-0000-4000-8000-000000000016",
+      "name": "5a. Draft status update (template)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Step 4b: something is missing. Draft a short note asking for exactly that, for a person to review.\nconst SIGNOFF = ['Thank you,', '[Reviewer name]', 'Example Refit Coordination (fictional)'];\nconst QUESTION = {\n  'contact name': 'the best name to use',\n  'email or phone': 'the best email or phone to reach you',\n  'vessel name': 'the name of the vessel',\n  'vessel length': 'the approximate length of the vessel',\n  'where the vessel is': 'where the vessel is located',\n  'description of the work': 'a few lines about the work you have in mind',\n  'preferred time window': 'the time window you are hoping for (an approximate season is fine)',\n};\n\nreturn $input.all().map(({ json }) => {\n  const { request: r, missing_fields } = json;\n  const canReply = Boolean(r.contact.email || r.contact.phone);\n  const first = r.contact.name ? r.contact.name.split(' ')[0] : 'there';\n  const body = [\n    'Hello ' + first + ',',\n    '',\n    'Thank you for getting in touch about ' + (r.vessel.name || 'your vessel') + '. To organize your request, could you send:',\n    '',\n    ...missing_fields.map((f) => '- ' + QUESTION[f]),\n    '',\n    'This message is an acknowledgment only. It is not a quote, a schedule, or an approval of any work.',\n    '',\n    ...SIGNOFF,\n  ].join('\\n');\n  const draft = canReply\n    ? { channel: r.contact.email ? 'email' : 'phone call', to: r.contact.email || r.contact.phone, subject: 'A few questions about your request', body, kind: 'missing-details request (template)' }\n    : { channel: 'none', to: '', subject: '', body: 'No reply is possible: no usable email or phone. Check the original source for another way to reach the client.', kind: 'internal note, no reply drafted' };\n  return { json: { ...json, draft_status_update: draft } };\n});\n"
+      },
+      "id": "e0000000-0000-4000-8000-000000000017",
+      "name": "5b. Draft request for missing details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d0000000-0000-4000-8000-000000000001",
+              "name": "approval",
+              "type": "object",
+              "value": "={{ { \"status\": \"PENDING_HUMAN_REVIEW\", \"message_sent\": false, \"note\": \"A person must read, edit and decide. This workflow has no send step and makes no commitments.\" } }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "e0000000-0000-4000-8000-000000000018",
+      "name": "Human review gate (nothing is sent)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Step 6: one readable record per request. Read `summary` first, then the sections in order:\n// intake, checks, categorization, project summary, next steps, draft status update, approval.\nreturn $input.all().map(({ json }) => {\n  const { request, missing_fields, classification, project_summary, next_steps, draft_status_update, approval } = json;\n  const summary = [\n    request.request_id,\n    request.vessel.name || '(no vessel name)',\n    classification.project_types.map((t) => t.type).join(' + '),\n    classification.urgency,\n    missing_fields.length ? 'MISSING: ' + missing_fields.join(', ') : 'complete',\n    approval.status,\n    'message sent: ' + (approval.message_sent ? 'YES' : 'no'),\n  ].join(' | ');\n\n  return {\n    json: {\n      summary,\n      intake: request,\n      checks: { is_complete: missing_fields.length === 0, missing_fields },\n      categorization: classification,\n      project_summary,\n      next_steps,\n      draft_status_update,\n      not_done_by_this_workflow: ['cost estimate', 'vendor selection', 'timeline promise', 'approval of work', 'sending any message'],\n      approval,\n    },\n  };\n});\n"
+      },
+      "id": "e0000000-0000-4000-8000-000000000019",
+      "name": "Review queue (read this output)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "**Where a person decides.** Every record ends as PENDING_HUMAN_REVIEW. Scope, cost, vendors and timing are human decisions and are outside this workflow.",
+        "width": 440,
+        "height": 150,
+        "color": 5
+      },
+      "id": "e0000000-0000-4000-8000-000000000002",
+      "name": "Note: Review gate",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1620,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Run manually": {
+      "main": [
+        [
+          {
+            "node": "1. Fictional refit requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Fictional refit requests": {
+      "main": [
+        [
+          {
+            "node": "2. Normalize + check missing details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Normalize + check missing details": {
+      "main": [
+        [
+          {
+            "node": "3. Categorize (keyword rules, not AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Categorize (keyword rules, not AI)": {
+      "main": [
+        [
+          {
+            "node": "4. Project summary + next-step checklist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Project summary + next-step checklist": {
+      "main": [
+        [
+          {
+            "node": "Complete intake?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete intake?": {
+      "main": [
+        [
+          {
+            "node": "5a. Draft status update (template)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "5b. Draft request for missing details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5a. Draft status update (template)": {
+      "main": [
+        [
+          {
+            "node": "Human review gate (nothing is sent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5b. Draft request for missing details": {
+      "main": [
+        [
+          {
+            "node": "Human review gate (nothing is sent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human review gate (nothing is sent)": {
+      "main": [
+        [
+          {
+            "node": "Review queue (read this output)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": []
+}

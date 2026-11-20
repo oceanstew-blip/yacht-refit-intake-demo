@@ -1,0 +1,62 @@
+[
+  {
+    "request_id": "YR-3001",
+    "received_at": "2026-04-06T09:12:00-04:00",
+    "vessel_name": "M/Y Sample Tide",
+    "vessel_type": "Motor yacht",
+    "length_m": "32",
+    "contact_name": "Jordan Example",
+    "email": "Jordan.Example@example.com",
+    "phone": "555-0101",
+    "location": "Example Marina, Placeholder Bay",
+    "requested_work": "Refresh the main salon and two guest cabins: new upholstery, new carpet, and some joinery repair in the galley.",
+    "target_window": "Winter, after the autumn season",
+    "deadline": "",
+    "notes": ""
+  },
+  {
+    "request_id": "YR-3002",
+    "received_at": "2026-04-06T10:30:00-04:00",
+    "vessel_name": "S/Y Demo Breeze",
+    "vessel_type": "Sailing yacht",
+    "length_m": "24",
+    "contact_name": "Riley Sample",
+    "email": "riley.sample@example.com",
+    "phone": "",
+    "location": "Fictional Harbor",
+    "requested_work": "Repaint the hull and refinish the teak deck. We also want the generator looked at while she is out of the water.",
+    "target_window": "Spring",
+    "deadline": "Back in the water before charter season starts",
+    "notes": "This is fairly urgent for us."
+  },
+  {
+    "request_id": "YR-3003",
+    "received_at": "2026-04-06T13:45:00-04:00",
+    "vessel_name": "M/Y Placeholder Star",
+    "vessel_type": "Motor yacht",
+    "length_m": "",
+    "contact_name": "Casey Placeholder",
+    "email": "casey.placeholder@example.com",
+    "phone": "",
+    "location": "",
+    "requested_work": "We would like to talk about a refit.",
+    "target_window": "",
+    "deadline": "",
+    "notes": ""
+  },
+  {
+    "request_id": "YR-3004",
+    "received_at": "2026-04-07T08:05:00-04:00",
+    "vessel_name": "M/Y Imaginary Wake",
+    "vessel_type": "Motor yacht",
+    "length_m": "41",
+    "contact_name": "Morgan Demo",
+    "email": "morgan.demo@example.com",
+    "phone": "555-0104",
+    "location": "Sample Yard, Example Coast",
+    "requested_work": "Replace the radar and chartplotter, add new wifi antennas, and update the audio system in the wheelhouse.",
+    "target_window": "Within the next year",
+    "deadline": "",
+    "notes": "No fixed date."
+  }
+]
